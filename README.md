@@ -6,7 +6,7 @@
 
 Code:
 ```js
- db.products.aggregate([{$match:{category:"Electronics"}}]);
+ db.products.aggregate([{$match:{category:"Electronics"}}])
 ```
 Output:
 ```js
@@ -155,7 +155,7 @@ Output:
 
 Code:
 ```js
-db.products.aggregate([{ $match: { date_added: { $gte: new ISODate("2023-02-01T00:00:00Z"), $lt: new ISODate("2023-03-01T00:00:00Z") } } }, { $project: { _id: 0, name: 1, category: 1, date_added: { $dateT$dateToString: { format: "%Y-%m-%d", date: "$date_added" } } } }]);
+db.products.aggregate([{ $match: { date_added: { $gte: new ISODate("2023-02-01T00:00:00Z"), $lt: new ISODate("2023-03-01T00:00:00Z") } } }, { $project: { _id: 0, name: 1, category: 1, date_added: { $dateT$dateToString: { format: "%Y-%m-%d", date: "$date_added" } } } }])
 ```
 Output:
 ```js
@@ -174,6 +174,106 @@ Output:
     name: 'Bluetooth Speaker',
     category: 'Electronics',
     date_added: '2023-02-25'
+  }
+]
+```
+### Hard Difficulty
+
+#### **1. Category Value and Classification:**
+
+Code:
+```js
+db.products.aggregate([{$group:{_id:"$category",totalInventoryValue:{$sum:{$multiply:["$price","$quantity"]}}}},{$project:{_id:0,categoryName:"$_id",totalInventoryValue:1,valueClassification:{$switch:{branches:[{case:{$gt:["$totalInventoryValue",10000]},then:"High Value"},{case:{$and:[{$gt:["$totalInventoryValue",5000]},{$lt:["$totalInventoryValue",10000]}]},then:"Medium Value"}],default:"Standard Value"}}}}])
+```
+Output:
+```js
+[
+  {
+    totalInventoryValue: 28025,
+    categoryName: 'Electronics',
+    valueClassification: 'High Value'
+  },
+  {
+    totalInventoryValue: 2700,
+    categoryName: 'Sports',
+    valueClassification: 'Standard Value'
+  },
+  {
+    totalInventoryValue: 8800,
+    categoryName: 'Apparel',
+    valueClassification: 'Medium Value'
+  },
+  {
+    totalInventoryValue: 7500,
+    categoryName: 'Home Goods',
+    valueClassification: 'Medium Value'
+  },
+  {
+    totalInventoryValue: 5400,
+    categoryName: 'Accessories',
+    valueClassification: 'Medium Value'
+  }
+]
+```
+#### **2. Suppliers and Their Most Expensive Product:**
+
+Code:
+```js
+db.products.aggregate([{$sort:{"price":-1}},{$group:{_id:"$supplier.name",mostExpensiveProductName:{$first:"$name"},maxPrice:{$first:"$price"}}},{$project:{_id:0,SupplierName:"$_id",mostExpensiveProductName:1,maxPrice:1}}])
+```
+Output:
+```js
+[
+  {
+    mostExpensiveProductName: 'Smartwatch',
+    maxPrice: 199,
+    SupplierName: 'GadgetPro'
+  },
+  {
+    mostExpensiveProductName: 'Laptop Pro',
+    maxPrice: 1200,
+    SupplierName: 'TechGlobe'
+  },
+  {
+    mostExpensiveProductName: 'Yoga Mat',
+    maxPrice: 30,
+    SupplierName: 'ActiveLife'
+  },
+  {
+    mostExpensiveProductName: 'Denim Jeans',
+    maxPrice: 60,
+    SupplierName: 'FashionHub'
+  },
+  {
+    mostExpensiveProductName: 'Bluetooth Speaker',
+    maxPrice: 80,
+    SupplierName: 'SoundWave'
+  },
+  {
+    mostExpensiveProductName: 'Leather Wallet',
+    maxPrice: 45,
+    SupplierName: 'StyleCraft'
+  },
+  {
+    mostExpensiveProductName: 'Espresso Machine',
+    maxPrice: 250,
+    SupplierName: 'HomeBest'
+  }
+]
+```
+#### **3. Products with "portable" tag but NOT "computer" tag:**
+
+Code:
+```js
+db.products.aggregate([{$match:{tags:{$all:["portable"],$nin:["computer"]}}},{$project:{_id:0,name:1,tags:1}}])
+```
+Output:
+```js
+[
+  { name: 'Smartwatch', tags: [ 'wearable', 'gadget', 'portable' ] },
+  {
+    name: 'Bluetooth Speaker',
+    tags: [ 'audio', 'portable', 'wireless' ]
   }
 ]
 ```
